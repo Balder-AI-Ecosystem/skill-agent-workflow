@@ -1,0 +1,88 @@
+name: skill-agent-workflow
+version: 0.1.0
+mode: local_plugin
+entrypoint: src.skill_agent_workflow.main:Skill
+core_api: ">=1.0,<2.0"
+
+capabilities:
+  - id: workflow.email.run
+    description: Run adaptive email workflow (triage / reply / digest / summarize).
+    input_schema:
+      type: object
+      properties:
+        intent:      { type: string }
+        parameters:  { type: object }
+        mode:        { type: string, enum: [triage, reply, digest, summarize] }
+        session_id:  { type: string }
+      required: [intent]
+    output_schema:
+      type: object
+    risk_level: medium
+    confirmation_required: false
+    retry_policy: bounded_backoff
+    observability_events:
+      - workflow.email.run
+
+  - id: workflow.calendar.run
+    description: Run adaptive calendar workflow (schedule / reschedule / check_conflicts).
+    input_schema:
+      type: object
+      properties:
+        intent:      { type: string }
+        parameters:  { type: object }
+        mode:        { type: string, enum: [schedule, reschedule, check_conflicts] }
+        session_id:  { type: string }
+      required: [intent]
+    output_schema:
+      type: object
+    risk_level: medium
+    confirmation_required: false
+    retry_policy: bounded_backoff
+    observability_events:
+      - workflow.calendar.run
+
+  - id: workflow.research.run
+    description: Run adaptive research workflow (search / summarize / extract / synthesize).
+    input_schema:
+      type: object
+      properties:
+        intent:      { type: string }
+        parameters:  { type: object }
+        mode:        { type: string, enum: [search, summarize, extract, synthesize] }
+        session_id:  { type: string }
+      required: [intent]
+    output_schema:
+      type: object
+    risk_level: low
+    confirmation_required: false
+    retry_policy: bounded_backoff
+    observability_events:
+      - workflow.research.run
+
+  - id: workflow.plan
+    description: >
+      Lightweight intent → domain planner. Returns which workflow + mode 
+      should handle a given user request, without executing.
+    input_schema:
+      type: object
+      properties:
+        intent: { type: string }
+      required: [intent]
+    output_schema:
+      type: object
+    risk_level: low
+    confirmation_required: false
+    retry_policy: none
+    observability_events:
+      - workflow.plan
+
+healthcheck:
+  kind: local
+  module: src.skill_agent_workflow.main
+  method: healthcheck
+
+permissions:
+  read_skills_registry: true     # cần đọc registry để gọi skill-* phụ
+  dispatch_skill_calls: true     # gọi sub-skill qua core service_dispatch
+timeout_ms: 90000
+enabled_by_default: true
